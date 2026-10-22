@@ -3,7 +3,7 @@
 
 **BuddyBook** is a tactile, multimedia digital scrapbook and visual diary. It lets users to capture, design, and explore life moments through customizable memory cards.
 
-- Github link : https://github.com/nixxdd/draft_app/tree/main
+- Github link : https://github.com/nixxdd/draft_app
 
 ---
 
