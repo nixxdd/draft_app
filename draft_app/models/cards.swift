@@ -22,12 +22,25 @@ class CardsModel {
                 CanvasItem(
                     id: UUID(),
                     kind: .tapeLabel,
-                    position: CGPoint(x: 150, y: 300),
+                    position: CGPoint(x: 150, y: 240),
                     size: CGSize(width: 180, height: 45),
                     rotationDegrees: -10,
                     scale: 1.0,
                     zIndex: 1,
                     text: "Sant'Elmo"
+                ),
+                CanvasItem(
+                    id: UUID(),
+                    position: CGPoint(x: 195, y: 350),
+                    size: CGSize(width: 180, height: 50),
+                    rotationDegrees: 2,
+                    scale: 1.0,
+                    zIndex: 2,
+                    content: .link(LinkPayload(
+                        urlString: "https://en.wikipedia.org/wiki/Castel_Sant%27Elmo",
+                        title: "Castel Sant'Elmo",
+                        host: "wikipedia.org"
+                    ))
                 )
             ],
             cardTintHex: "#e4c8e4"
@@ -36,14 +49,53 @@ class CardsModel {
             title: "Coffee with friends",
             date: makeDate(day: 25),
             taggedFriendIDs: [],
-            items: [],
+            items: [
+                CanvasItem(
+                    id: UUID(),
+                    position: CGPoint(x: 195, y: 340),
+                    size: CGSize(width: 170, height: 56),
+                    rotationDegrees: -3,
+                    scale: 1.0,
+                    zIndex: 1,
+                    content: .audioNote(AudioNotePayload(durationSeconds: 8.0))
+                ),
+                CanvasItem(
+                    id: UUID(),
+                    position: CGPoint(x: 195, y: 220),
+                    size: CGSize(width: 170, height: 120),
+                    rotationDegrees: 2,
+                    scale: 1.0,
+                    zIndex: 2,
+                    content: .video(VideoPayload(
+                        durationSeconds: 15,
+                        isMuted: true,
+                        videoURLString: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+                    ))
+                )
+            ],
             cardTintHex: "#f7d4d9"
         ),
         MemoryCard(
             title: "Beach Sunset",
             date: makeDate(day: 25),
             taggedFriendIDs: [],
-            items: [],
+            items: [
+                CanvasItem(
+                    id: UUID(),
+                    position: CGPoint(x: 195, y: 300),
+                    size: CGSize(width: 220, height: 60),
+                    rotationDegrees: 2,
+                    scale: 1.0,
+                    zIndex: 1,
+                    content: .musicEmbed(MusicEmbedPayload(
+                        trackTitle: "Espresso",
+                        artist: "Sabrina Carpenter",
+                        previewURLString: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/91/97/bb/9197bb75-9e6b-a2ea-9e0a-0c7f2127ef3e/mzaf_17208107936166795493.plus.aac.p.m4a",
+                        appleMusicURLString: "https://music.apple.com/us/album/espresso/1739566914?i=1739566922",
+                        isAppleMusic: true
+                    ))
+                )
+            ],
             cardTintHex: "#E2ECF5"
         ),
         MemoryCard(
@@ -53,13 +105,19 @@ class CardsModel {
             items: [
                 CanvasItem(
                     id: UUID(),
-                    kind: .polaroidPhoto,
                     position: CGPoint(x: 110, y: 240),
                     size: CGSize(width: 140, height: 180),
                     rotationDegrees: -8,
                     scale: 1.0,
                     zIndex: 1,
-                    tapeStyle: .topLeftYellow
+                    tapeStyle: .topLeftYellow,
+                    content: .photo(PhotoPayload(
+                        caption: "Naples View",
+                        isPolaroid: true,
+                        latitude: 40.8444,
+                        longitude: 14.2389,
+                        locationName: "Castel Sant'Elmo, Naples"
+                    ))
                 ),
                 CanvasItem(
                     id: UUID(),

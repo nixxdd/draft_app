@@ -54,6 +54,17 @@ struct MemoriesView: View {
                 }
             }
         }
+        .onAppear {
+            store.handleCardSwitchAutoplay()
+        }
+        .onChange(of: store.selectedCardID) { _, _ in
+            store.handleCardSwitchAutoplay()
+        }
+        .onChange(of: store.isEditingCard) { _, isEditing in
+            if !isEditing {
+                store.handleCardSwitchAutoplay()
+            }
+        }
     }
 }
 

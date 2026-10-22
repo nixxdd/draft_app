@@ -11,7 +11,7 @@ import SwiftUI
 struct draft_appApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MemoriesView()
         }
     }
 }

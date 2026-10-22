@@ -89,13 +89,24 @@ private struct TimelineDaySlotView: View {
         ZStack(alignment: .topLeading) {
             // Back card (if multiple memories on this day or selected, matching Rectangle 3 & Rectangle 4 on Day 25 in Sketch)
             if dayCards.count > 1 {
-                RoundedRectangle(cornerRadius: 30, style: .continuous)
-                    .fill(Color(red: 0.88, green: 0.88, blue: 0.90).opacity(0.72))
-                    .frame(width: 102, height: 145)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 30, style: .continuous)
-                            .strokeBorder(.white.opacity(0.5), lineWidth: 1)
-                    )
+                let inactiveCard = dayCards.first(where: { $0.id != activeCardForDay.id }) ?? dayCards[1]
+                let backBgColor = Color(hex: inactiveCard.cardTintHex) ?? Color(red: 0.88, green: 0.88, blue: 0.90)
+                
+                ZStack {
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .fill(backBgColor.opacity(0.85))
+                    
+                    CanvasItemsLayer(store: store, card: inactiveCard, isEditable: false, isThumbnail: true)
+                        .frame(width: 102, height: 145)
+                        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                        .allowsHitTesting(false)
+                        .opacity(0.65)
+                }
+                .frame(width: 102, height: 145)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .strokeBorder(.white.opacity(0.6), lineWidth: 1)
+                )
                 
                 cardThumbnail(for: activeCardForDay, isFrontStack: true)
                     .offset(x: 11, y: 11)
@@ -137,36 +148,51 @@ private struct TimelineDaySlotView: View {
     @ViewBuilder
     private func cardThumbnail(for card: MemoryCard, isFrontStack: Bool) -> some View {
         let isCurrent = card.id == store.selectedCardID
+        let cardBgColor = Color(hex: card.cardTintHex) ?? Color(red: 0.90, green: 0.90, blue: 0.92)
+        
         ZStack {
-            RoundedRectangle(cornerRadius: 30, style: .continuous)
-                .fill(
-                    isCurrent
-                    ? Color(red: 0.84, green: 0.84, blue: 0.86).opacity(0.92)
-                    : Color(red: 0.90, green: 0.90, blue: 0.92).opacity(0.82)
-                )
+            // Card background tint
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(cardBgColor)
             
-            // Subtle miniature preview of the card's actual items
-            // MemoryCardMiniPreview(store: store, card: card)
-            //    .opacity(isCurrent ? 0.55 : 0.32)
-            //    .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
+            // Live canvas miniature preview showing all stickers, photos, notes, audio, maps
+            CanvasItemsLayer(store: store, card: card, isEditable: false, isThumbnail: true)
+                .frame(width: 102, height: 145)
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .allowsHitTesting(false)
+            
+            if card.items.isEmpty {
+                VStack(spacing: 4) {
+                    Image(systemName: "photo.on.rectangle.angled")
+                        .font(.system(size: 20))
+                        .foregroundStyle(Color.black.opacity(0.2))
+                    Text(card.title)
+                        .font(.system(size: 9, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Color.black.opacity(0.35))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 6)
+                }
+            }
         }
         .frame(width: 102, height: 145)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 30, style: .continuous)
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .strokeBorder(
-                    isCurrent || isFrontStack
-                    ? Color(red: 0.711, green: 0.674, blue: 0.674)
-                    : Color.white.opacity(0.6),
-                    lineWidth: isCurrent ? 1.5 : 1.0
+                    isCurrent
+                    ? SketchTheme.dateBadgeColor
+                    : (isFrontStack ? Color(red: 0.711, green: 0.674, blue: 0.674) : Color.white.opacity(0.7)),
+                    lineWidth: isCurrent ? 2.5 : 1.0
                 )
         )
         .shadow(
-            color: .black.opacity(isCurrent ? 0.14 : 0.05),
+            color: isCurrent ? SketchTheme.dateBadgeColor.opacity(0.35) : .black.opacity(0.08),
             radius: isCurrent ? 8 : 4,
             x: 0,
             y: 4
         )
-        .scaleEffect(isCurrent ? 1.02 : 1.0)
+        .scaleEffect(isCurrent ? 1.04 : 1.0)
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: isCurrent)
     }
 }
 
