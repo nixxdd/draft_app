@@ -21,6 +21,7 @@ struct ElementContentEditorSheet: View {
     @State private var number1: Double = 0.0
     @State private var previewPlayer: AVAudioPlayer? = nil
     @State private var isPlayingPreview = false
+    @State private var taggedFriendIDs: [UUID] = []
     
     init(item: CanvasItem, store: MemoryStore, onSave: @escaping (CanvasItem) -> Void, onCancel: @escaping () -> Void, onDelete: @escaping () -> Void) {
         self.item = item
@@ -28,6 +29,7 @@ struct ElementContentEditorSheet: View {
         self.onSave = onSave
         self.onCancel = onCancel
         self.onDelete = onDelete
+        _taggedFriendIDs = State(initialValue: item.taggedFriendIDs)
         
         switch item.content {
         case .photo(let payload):
@@ -49,6 +51,8 @@ struct ElementContentEditorSheet: View {
             _text2 = State(initialValue: payload.fileSizeDescription)
         case .video(let payload):
             _bool1 = State(initialValue: payload.isMuted)
+        case .text(let payload):
+            _text1 = State(initialValue: payload.text)
         default:
             break
         }
@@ -63,6 +67,7 @@ struct ElementContentEditorSheet: View {
         case .musicEmbed: return "Edit Music"
         case .file: return "Edit Document"
         case .video: return "Edit Video"
+        case .text: return "Edit Note"
         default: return "Edit Element"
         }
     }
@@ -78,6 +83,8 @@ struct ElementContentEditorSheet: View {
     
     private func saveChanges() {
         var updated = item
+        updated.taggedFriendIDs = taggedFriendIDs
+        
         switch item.content {
         case .photo(var payload):
             let trimmed = text1.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -117,6 +124,10 @@ struct ElementContentEditorSheet: View {
         case .video(var payload):
             payload.isMuted = bool1
             updated.content = .video(payload)
+        case .text(var payload):
+            let trimmed = text1.trimmingCharacters(in: .whitespacesAndNewlines)
+            payload.text = trimmed.isEmpty ? "Note" : trimmed
+            updated.content = .text(payload)
         default:
             break
         }
@@ -202,8 +213,70 @@ struct ElementContentEditorSheet: View {
                         )
                     }
                 }
+            case .text:
+                Section("Note Text") {
+                    TextField("Text", text: $text1, axis: .vertical)
+                        .lineLimit(3...6)
+                }
             default:
                 EmptyView()
+            }
+            
+            // Tagged Friends Section
+            Section {
+                if store.friends.isEmpty {
+                    Text("No friends added yet. Open Friends Cosmos from the top bar to add from your Contacts.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(store.friends) { friend in
+                        let isTagged = taggedFriendIDs.contains(friend.id)
+                        Button {
+                            if isTagged {
+                                taggedFriendIDs.removeAll { $0 == friend.id }
+                            } else {
+                                taggedFriendIDs.append(friend.id)
+                            }
+                        } label: {
+                            HStack(spacing: 12) {
+                                FriendAvatarView(friend: friend, size: 36)
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(friend.name)
+                                        .font(.body.weight(.medium))
+                                        .foregroundStyle(.primary)
+                                    if !friend.birthday.isEmpty {
+                                        Text("🎂 \(friend.birthday)")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: isTagged ? "checkmark.circle.fill" : "circle")
+                                    .font(.title3)
+                                    .foregroundStyle(isTagged ? Color.purple : Color.secondary.opacity(0.3))
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            } header: {
+                HStack {
+                    Text("Tag Friends")
+                    Spacer()
+                    if !taggedFriendIDs.isEmpty {
+                        Text("\(taggedFriendIDs.count) tagged")
+                            .font(.caption)
+                            .foregroundStyle(.purple)
+                    }
+                }
+            } footer: {
+                Text("Friends tagged on this element will grow their bubble in the Friends screen!")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
             
             Section {

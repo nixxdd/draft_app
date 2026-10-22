@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MemoriesView: View {
     @State private var store = MemoryStore()
+    @State private var isShowingFriendsView = false
     let fullCanvasSize = CGSize(width: 390, height: 720)
 
     var body: some View {
@@ -15,7 +16,7 @@ struct MemoriesView: View {
                 VStack {
                     ZStack {
                         GlassOvalButton(systemImage: "person.2") {
-                            // action for later
+                            isShowingFriendsView = true
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         
@@ -64,6 +65,9 @@ struct MemoriesView: View {
             if !isEditing {
                 store.handleCardSwitchAutoplay()
             }
+        }
+        .fullScreenCover(isPresented: $isShowingFriendsView) {
+            FriendsBubbleView(store: store)
         }
     }
 }

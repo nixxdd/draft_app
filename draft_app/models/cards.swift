@@ -17,7 +17,7 @@ class CardsModel {
         MemoryCard(
             title: "Monte Sant'Elmo Day",
             date: makeDate(day: 24),
-            taggedFriendIDs: [],
+            taggedFriendIDs: [SampleFriends.stefaniaID],
             items: [
                 CanvasItem(
                     id: UUID(),
@@ -36,6 +36,7 @@ class CardsModel {
                     rotationDegrees: 2,
                     scale: 1.0,
                     zIndex: 2,
+                    taggedFriendIDs: [SampleFriends.stefaniaID],
                     content: .link(LinkPayload(
                         urlString: "https://en.wikipedia.org/wiki/Castel_Sant%27Elmo",
                         title: "Castel Sant'Elmo",
@@ -48,7 +49,7 @@ class CardsModel {
         MemoryCard(
             title: "Coffee with friends",
             date: makeDate(day: 25),
-            taggedFriendIDs: [],
+            taggedFriendIDs: [SampleFriends.stefaniaID, SampleFriends.lucaID],
             items: [
                 CanvasItem(
                     id: UUID(),
@@ -66,6 +67,7 @@ class CardsModel {
                     rotationDegrees: 2,
                     scale: 1.0,
                     zIndex: 2,
+                    taggedFriendIDs: [SampleFriends.lucaID],
                     content: .video(VideoPayload(
                         durationSeconds: 15,
                         isMuted: true,
@@ -78,7 +80,7 @@ class CardsModel {
         MemoryCard(
             title: "Beach Sunset",
             date: makeDate(day: 25),
-            taggedFriendIDs: [],
+            taggedFriendIDs: [SampleFriends.chiaraID],
             items: [
                 CanvasItem(
                     id: UUID(),
@@ -111,6 +113,7 @@ class CardsModel {
                     scale: 1.0,
                     zIndex: 1,
                     tapeStyle: .topLeftYellow,
+                    taggedFriendIDs: [SampleFriends.stefaniaID],
                     content: .photo(PhotoPayload(
                         caption: "Naples View",
                         isPolaroid: true,

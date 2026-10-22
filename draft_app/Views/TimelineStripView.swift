@@ -10,7 +10,7 @@ struct TimelineStripView: View {
         VStack(spacing: 4) {
             Text("Timeline")
                 .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(.black)
+                .foregroundStyle(.primary)
             
             ZStack(alignment: .center) {
                 Rectangle()
@@ -208,7 +208,7 @@ private struct NewTimelineCardButton: View {
                     .foregroundStyle(SketchTheme.dateBadgeColor)
                 Text("New Card")
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.black.opacity(0.65))
+                    .foregroundStyle(Color.primary.opacity(0.75))
             }
             .frame(width: 102, height: 145)
             .background(

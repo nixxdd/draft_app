@@ -246,6 +246,7 @@
 				DEVELOPMENT_TEAM = F8N5K6285G;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSContactsUsageDescription = "Allow access to your contacts to import friends and their details to your memory cards.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Draft needs access to the microphone to record voice notes for your memory cards.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Draft uses your photo library to let you select photos, videos, and albums to decorate your memory cards.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -280,6 +281,7 @@
 				DEVELOPMENT_TEAM = F8N5K6285G;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSContactsUsageDescription = "Allow access to your contacts to import friends and their details to your memory cards.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Draft needs access to the microphone to record voice notes for your memory cards.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Draft uses your photo library to let you select photos, videos, and albums to decorate your memory cards.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

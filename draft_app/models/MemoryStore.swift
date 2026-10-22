@@ -8,13 +8,14 @@
 import Foundation
 import SwiftUI
 import AVFoundation
+import Contacts
 
 // Observable means that
 // "Whenever any var inside this class changes, automatically redraw any View that reads it."
 
 @Observable
 final class MemoryStore {
-    var friends: [Friend] = []
+    var friends: [Friend] = SampleFriends.defaults
     var cards: [MemoryCard]
     var selectedCardID: UUID
     var selectedItemID: UUID? = nil
@@ -38,9 +39,153 @@ final class MemoryStore {
     var playingVideoItemID: UUID? = nil
     var videoPlayer: AVPlayer?
     
-    init(cards: [MemoryCard] = CardsModel().cards) {
+    init(cards: [MemoryCard] = CardsModel().cards, friends: [Friend] = SampleFriends.defaults) {
         self.cards = cards
+        self.friends = friends
         self.selectedCardID = cards.last?.id ?? UUID()
+    }
+    
+    // MARK: - Friends & Tagging Statistics
+    
+    /// Returns the total number of times a friend is tagged across all memory cards and their canvas items
+    func tagCount(for friendID: UUID) -> Int {
+        var count = 0
+        for card in cards {
+            if card.taggedFriendIDs.contains(friendID) {
+                count += 1
+            }
+            for item in card.items {
+                if item.taggedFriendIDs.contains(friendID) {
+                    count += 1
+                }
+                if case .contact(let p) = item.content, p.friendID == friendID {
+                    count += 1
+                }
+            }
+        }
+        return count
+    }
+    
+    var mostTaggedFriendID: UUID? {
+        guard !friends.isEmpty else { return nil }
+        let friendCounts = friends.map { ($0.id, tagCount(for: $0.id)) }
+        let maxCount = friendCounts.map { $0.1 }.max() ?? 0
+        guard maxCount > 0 else { return nil }
+        return friendCounts.first(where: { $0.1 == maxCount })?.0
+    }
+    
+    func maxTagCount() -> Int {
+        friends.map { tagCount(for: $0.id) }.max() ?? 0
+    }
+    
+    func cardsFeaturingFriend(_ friendID: UUID) -> [MemoryCard] {
+        cards.filter { card in
+            card.taggedFriendIDs.contains(friendID) ||
+            card.items.contains { item in
+                item.taggedFriendIDs.contains(friendID) ||
+                {
+                    if case .contact(let p) = item.content { return p.friendID == friendID }
+                    return false
+                }()
+            }
+        }
+    }
+    
+    // MARK: - Contacts Import
+    
+    func addFriendFromContact(_ contact: CNContact) {
+        let fullName = [contact.givenName, contact.middleName, contact.familyName]
+            .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+            .joined(separator: " ")
+        let name = fullName.isEmpty ? (contact.organizationName.isEmpty ? "Friend" : contact.organizationName) : fullName
+        let displayName = contact.nickname.isEmpty ? (contact.givenName.isEmpty ? name : contact.givenName) : contact.nickname
+        
+        // If friend with same name exists, update avatar and details
+        if let existingIdx = friends.firstIndex(where: { $0.name.lowercased() == name.lowercased() }) {
+            if friends[existingIdx].avatarData == nil {
+                friends[existingIdx].avatarData = contact.imageData ?? contact.thumbnailImageData
+            }
+            return
+        }
+        
+        // Birthday formatting
+        var birthdayStr = ""
+        if let bday = contact.birthday {
+            var comps = DateComponents()
+            comps.month = bday.month
+            comps.day = bday.day
+            comps.year = bday.year
+            if let date = Calendar.current.date(from: comps) {
+                let formatter = DateFormatter()
+                if bday.year == nil {
+                    formatter.setLocalizedDateFormatFromTemplate("MMMM d")
+                } else {
+                    formatter.setLocalizedDateFormatFromTemplate("MMMM d, yyyy")
+                }
+                birthdayStr = formatter.string(from: date)
+            }
+        }
+        
+        let phone = contact.phoneNumbers.first?.value.stringValue
+        let email = contact.emailAddresses.first?.value as String?
+        let job = [contact.jobTitle, contact.departmentName, contact.organizationName]
+            .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+            .joined(separator: " • ")
+        
+        let pastelColors = ["#E4C8E4", "#F5EC87", "#F8C8DC", "#D2F7E5", "#E2ECF5", "#FAD4C0"]
+        let assignedColor = pastelColors.randomElement() ?? "#E4C8E4"
+        
+        let newFriend = Friend(
+            id: UUID(),
+            name: name,
+            displayName: displayName,
+            avatarAsset: "",
+            badgeEmoji: "✨",
+            lastInteractionText: "Added from Contacts",
+            cosmoPosition: CGPoint(x: CGFloat.random(in: 100...280), y: CGFloat.random(in: 200...500)),
+            favoriteColor: assignedColor,
+            hobbies: job.isEmpty ? "Friend" : job,
+            birthday: birthdayStr,
+            avatarData: contact.imageData ?? contact.thumbnailImageData,
+            phoneNumber: phone,
+            email: email
+        )
+        
+        friends.append(newFriend)
+    }
+    
+    func addFriendsFromContacts(_ contacts: [CNContact]) {
+        for contact in contacts {
+            addFriendFromContact(contact)
+        }
+    }
+    
+    func deleteFriend(id: UUID) {
+        friends.removeAll(where: { $0.id == id })
+        for cardIdx in cards.indices {
+            cards[cardIdx].taggedFriendIDs.removeAll(where: { $0 == id })
+            for itemIdx in cards[cardIdx].items.indices {
+                cards[cardIdx].items[itemIdx].taggedFriendIDs.removeAll(where: { $0 == id })
+            }
+        }
+    }
+    
+    func addHobby(to friendID: UUID, hobby: String) {
+        guard let idx = friends.firstIndex(where: { $0.id == friendID }) else { return }
+        let trimmed = hobby.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        var currentList = friends[idx].hobbyList
+        if !currentList.contains(where: { $0.caseInsensitiveCompare(trimmed) == .orderedSame }) {
+            currentList.append(trimmed)
+            friends[idx].hobbies = currentList.joined(separator: ", ")
+        }
+    }
+    
+    func removeHobby(from friendID: UUID, hobby: String) {
+        guard let idx = friends.firstIndex(where: { $0.id == friendID }) else { return }
+        var currentList = friends[idx].hobbyList
+        currentList.removeAll(where: { $0.caseInsensitiveCompare(hobby) == .orderedSame })
+        friends[idx].hobbies = currentList.joined(separator: ", ")
     }
     
     var selectedCard: MemoryCard? {

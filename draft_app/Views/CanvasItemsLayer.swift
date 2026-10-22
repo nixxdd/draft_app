@@ -136,20 +136,34 @@ struct DraggableCanvasItem: View {
     
     var body: some View {
         itemVisual
+            .overlay(alignment: .bottomTrailing) {
+                if !item.taggedFriendIDs.isEmpty {
+                    friendTagsBadge
+                }
+            }
             .contentShape(Rectangle())
             .onTapGesture {
-                if case .audioNote = item.content {
+                if isEditable {
+                    onItemClick?(item)
+                } else if case .audioNote = item.content {
                     store.toggleVoiceNotePlayback(for: item)
                 } else if case .musicEmbed = item.content {
                     store.toggleMusicPlayback(for: item)
-                } else if case .video = item.content, !isEditable {
+                } else if case .video = item.content {
                     store.toggleVideoPlayback(for: item)
-                } else if case .file(let payload) = item.content, !isEditable {
+                } else if case .file(let payload) = item.content {
                     previewFile(payload)
-                } else if case .link(let payload) = item.content, !isEditable {
+                } else if case .link(let payload) = item.content {
                     openLinkInBrowser(payload)
-                } else if isEditable {
-                    onItemClick?(item)
+                }
+            }
+            .contextMenu {
+                if isEditable {
+                    Button {
+                        onItemClick?(item)
+                    } label: {
+                        Label("Edit & Tag Friends", systemImage: "person.crop.circle.badge.plus")
+                    }
                 }
             }
             .quickLookPreview($quickLookURL)
@@ -174,18 +188,18 @@ struct DraggableCanvasItem: View {
                         if distance < 4 {
                             dragOffset = .zero
                             onDragEnded?(item, nil)
-                            if case .audioNote = item.content {
+                            if isEditable {
+                                onItemClick?(item)
+                            } else if case .audioNote = item.content {
                                 store.toggleVoiceNotePlayback(for: item)
                             } else if case .musicEmbed = item.content {
                                 store.toggleMusicPlayback(for: item)
-                            } else if case .video = item.content, !isEditable {
+                            } else if case .video = item.content {
                                 store.toggleVideoPlayback(for: item)
-                            } else if case .file(let payload) = item.content, !isEditable {
+                            } else if case .file(let payload) = item.content {
                                 previewFile(payload)
-                            } else if case .link(let payload) = item.content, !isEditable {
+                            } else if case .link(let payload) = item.content {
                                 openLinkInBrowser(payload)
-                            } else {
-                                onItemClick?(item)
                             }
                         } else {
                             let finalPos = CGPoint(
@@ -204,6 +218,29 @@ struct DraggableCanvasItem: View {
                     }
                 : nil
             )
+    }
+    
+    private var friendTagsBadge: some View {
+        HStack(spacing: -6) {
+            ForEach(item.taggedFriendIDs.prefix(3), id: \.self) { friendID in
+                if let friend = store.friends.first(where: { $0.id == friendID }) {
+                    FriendAvatarView(friend: friend, size: 20)
+                        .clipShape(Circle())
+                        .overlay(Circle().strokeBorder(Color.white, lineWidth: 1.5))
+                        .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
+                }
+            }
+            if item.taggedFriendIDs.count > 3 {
+                Text("+\(item.taggedFriendIDs.count - 3)")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 18, height: 18)
+                    .background(Color.black.opacity(0.7), in: Circle())
+                    .overlay(Circle().strokeBorder(Color.white, lineWidth: 1))
+            }
+        }
+        .padding(3)
+        .offset(x: 4, y: 4)
     }
     
     @ViewBuilder

@@ -284,6 +284,7 @@ struct CanvasItem: Identifiable, Codable, Equatable {
     var tapeStyle: WashiTapeStyle = .none
     var borderWidth: CGFloat = 0.0
     var hasShadow: Bool = true
+    var taggedFriendIDs: [UUID] = []
     
     /// Polymorphic content representing map, link, contact, emoji, text, photo, video, file, audio note, or music embed
     var content: CanvasContent
@@ -304,6 +305,7 @@ struct CanvasItem: Identifiable, Codable, Equatable {
         tapeStyle: WashiTapeStyle = .none,
         borderWidth: CGFloat = 0.0,
         hasShadow: Bool = true,
+        taggedFriendIDs: [UUID] = [],
         content: CanvasContent
     ) {
         self.id = id
@@ -315,6 +317,7 @@ struct CanvasItem: Identifiable, Codable, Equatable {
         self.tapeStyle = tapeStyle
         self.borderWidth = borderWidth
         self.hasShadow = hasShadow
+        self.taggedFriendIDs = taggedFriendIDs
         self.content = content
     }
     
@@ -338,7 +341,8 @@ struct CanvasItem: Identifiable, Codable, Equatable {
         voiceDurationSeconds: Double = 8.0,
         audioFilename: String? = nil,
         latitude: Double? = nil,
-        longitude: Double? = nil
+        longitude: Double? = nil,
+        taggedFriendIDs: [UUID] = []
     ) {
         self.id = id
         self.position = position
@@ -349,6 +353,11 @@ struct CanvasItem: Identifiable, Codable, Equatable {
         self.tapeStyle = tapeStyle
         self.borderWidth = borderWidth
         self.hasShadow = hasShadow
+        var resolvedTagged = taggedFriendIDs
+        if let friendID = friendID, !resolvedTagged.contains(friendID) {
+            resolvedTagged.append(friendID)
+        }
+        self.taggedFriendIDs = resolvedTagged
         
         switch kind {
         case .map, .mapLocation:

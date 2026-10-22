@@ -148,11 +148,12 @@ struct CanvasView: View {
                             .foregroundStyle(.pink)
                         Text(msg)
                             .font(.subheadline.bold())
-                            .foregroundStyle(Color(white: 0.2))
+                            .foregroundStyle(Color.primary)
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 9)
-                    .background(.white.opacity(0.95), in: Capsule())
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .overlay(Capsule().strokeBorder(Color.primary.opacity(0.12), lineWidth: 1))
                     .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
                     .transition(.move(edge: .top).combined(with: .opacity))
                     .padding(.top, 4)
@@ -480,10 +481,11 @@ struct CanvasView: View {
             }
         }
         .font(.system(size: 20, weight: .medium))
-        .foregroundStyle(.white.opacity(0.85))
+        .foregroundStyle(Color.primary)
         .padding(.horizontal, 22)
         .padding(.vertical, 12)
         .background(.ultraThinMaterial, in: Capsule())
+        .overlay(Capsule().strokeBorder(Color.primary.opacity(0.12), lineWidth: 1))
         .shadow(color: .black.opacity(0.08), radius: 8, y: 4)
     }
     
@@ -658,17 +660,17 @@ struct TrashDropZoneView: View {
             
             Text(isHovered ? "Release to Delete" : "Drag here to delete")
                 .font(.subheadline.bold())
-                .foregroundStyle(isHovered ? .white : Color(white: 0.25))
+                .foregroundStyle(isHovered ? .white : Color.primary)
         }
         .padding(.horizontal, isHovered ? 20 : 16)
         .padding(.vertical, isHovered ? 12 : 9)
         .background(
-            isHovered ? Color.red : Color.white.opacity(0.92),
+            isHovered ? Color.red : Color(.secondarySystemGroupedBackground),
             in: Capsule()
         )
         .overlay(
             Capsule()
-                .strokeBorder(isHovered ? Color.white.opacity(0.3) : Color.black.opacity(0.12), lineWidth: 1.5)
+                .strokeBorder(isHovered ? Color.white.opacity(0.3) : Color.primary.opacity(0.12), lineWidth: 1.5)
         )
         .shadow(color: isHovered ? Color.red.opacity(0.5) : Color.black.opacity(0.15), radius: isHovered ? 12 : 6, y: 3)
         .scaleEffect(isHovered ? 1.12 : 1.0)
