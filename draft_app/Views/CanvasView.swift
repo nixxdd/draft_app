@@ -197,8 +197,9 @@ struct CanvasView: View {
                 
             case .textEditor(let itemToEdit):
                 TextItemEditorSheet(
+                    store: store,
                     initialItem: itemToEdit,
-                    onSave: { newText, bgHex, textHex in
+                    onSave: { newText, bgHex, textHex, newTaggedIDs in
                         if let existingItem = itemToEdit {
                             var updated = existingItem
                             let existingDesign: String
@@ -207,6 +208,7 @@ struct CanvasView: View {
                             } else {
                                 existingDesign = "rounded"
                             }
+                            updated.taggedFriendIDs = newTaggedIDs
                             updated.content = .text(TextPayload(
                                 text: newText,
                                 fontDesign: existingDesign,
@@ -221,7 +223,8 @@ struct CanvasView: View {
                                     fontDesign: "rounded",
                                     textColorHex: textHex,
                                     backgroundColorHex: bgHex
-                                ))
+                                )),
+                                taggedFriendIDs: newTaggedIDs
                             )
                         }
                         activeSheet = nil
@@ -348,18 +351,8 @@ struct CanvasView: View {
     
     private func handleItemClick(_ item: CanvasItem) {
         switch item.content {
-        case .audioNote:
-            // Voice notes toggle audio playback rather than opening edit mode
-            store.toggleVoiceNotePlayback(for: item)
-        case .musicEmbed:
-            // Music embeds toggle music playback rather than opening edit mode
-            store.toggleMusicPlayback(for: item)
-        case .map:
-            activeSheet = .locationPicker(item)
         case .text:
             activeSheet = .textEditor(item)
-        case .emoji:
-            activeSheet = .editEmoji(item)
         default:
             activeSheet = .editOther(item)
         }

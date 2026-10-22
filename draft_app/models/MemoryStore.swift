@@ -40,9 +40,10 @@ final class MemoryStore {
     var videoPlayer: AVPlayer?
     
     init(cards: [MemoryCard] = CardsModel().cards, friends: [Friend] = SampleFriends.defaults) {
-        self.cards = cards
+        let sortedCards = cards.sorted(by: { $0.date < $1.date })
+        self.cards = sortedCards
         self.friends = friends
-        self.selectedCardID = cards.last?.id ?? UUID()
+        self.selectedCardID = sortedCards.last?.id ?? UUID()
     }
     
     // MARK: - Friends & Tagging Statistics
@@ -199,17 +200,22 @@ final class MemoryStore {
         }
     }
 
-    func createNewCard(date : Date = .now) {
+    @discardableResult
+    func createNewCard(date: Date = .now, startEditing: Bool = false) -> MemoryCard {
         let newCard = MemoryCard(
             title: "New Memory",
-            date: date ,
+            date: date,
             taggedFriendIDs: [],
             items: [],
             cardTintHex: "#E8DDE8"
         )
         cards.append(newCard)
+        cards.sort(by: { $0.date < $1.date })
         selectedCardID = newCard.id
-        isEditingCard = true
+        if startEditing {
+            isEditingCard = true
+        }
+        return newCard
     }
 
     func updateItem(_ updatedItem: CanvasItem) {
@@ -460,7 +466,12 @@ final class MemoryStore {
         cards[cardIndex].items.append(newItem)
     }
 
-    func addItem(content: CanvasContent, size: CGSize = CGSize(width: 140, height: 140), position: CGPoint = CGPoint(x: 180, y: 260)) {
+    func addItem(_ item: CanvasItem) {
+        guard let cardIndex = cards.firstIndex(where: { $0.id == selectedCardID }) else { return }
+        cards[cardIndex].items.append(item)
+    }
+
+    func addItem(content: CanvasContent, size: CGSize = CGSize(width: 140, height: 140), position: CGPoint = CGPoint(x: 180, y: 260), taggedFriendIDs: [UUID] = []) {
         guard let cardIndex = cards.firstIndex(where: { $0.id == selectedCardID }) else { return }
         let newItem = CanvasItem(
             id: UUID(),
@@ -469,6 +480,7 @@ final class MemoryStore {
             rotationDegrees: Double.random(in: -8...8),
             scale: 1.0,
             zIndex: Double(cards[cardIndex].items.count + 1),
+            taggedFriendIDs: taggedFriendIDs,
             content: content
         )
         cards[cardIndex].items.append(newItem)

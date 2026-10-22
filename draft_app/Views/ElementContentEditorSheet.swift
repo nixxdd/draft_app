@@ -19,8 +19,11 @@ struct ElementContentEditorSheet: View {
     @State private var text2: String = ""
     @State private var bool1: Bool = true
     @State private var number1: Double = 0.0
+    @State private var mapLatitude: Double = 40.8518
+    @State private var mapLongitude: Double = 14.2681
+    @State private var showLocationPicker: Bool = false
     @State private var previewPlayer: AVAudioPlayer? = nil
-    @State private var isPlayingPreview = false
+    @State private var isPlayingPreview: Bool = false
     @State private var taggedFriendIDs: [UUID] = []
     
     init(item: CanvasItem, store: MemoryStore, onSave: @escaping (CanvasItem) -> Void, onCancel: @escaping () -> Void, onDelete: @escaping () -> Void) {
@@ -40,6 +43,8 @@ struct ElementContentEditorSheet: View {
             _text2 = State(initialValue: payload.urlString)
         case .map(let payload):
             _text1 = State(initialValue: payload.title)
+            _mapLatitude = State(initialValue: payload.latitude)
+            _mapLongitude = State(initialValue: payload.longitude)
         case .contact(let payload):
             _text1 = State(initialValue: payload.name)
             _text2 = State(initialValue: payload.subtitle ?? "")
@@ -53,8 +58,10 @@ struct ElementContentEditorSheet: View {
             _bool1 = State(initialValue: payload.isMuted)
         case .text(let payload):
             _text1 = State(initialValue: payload.text)
-        default:
-            break
+        case .audioNote(let payload):
+            _number1 = State(initialValue: payload.durationSeconds)
+        case .emoji(let payload):
+            _text1 = State(initialValue: payload.emoji)
         }
     }
     
@@ -62,13 +69,14 @@ struct ElementContentEditorSheet: View {
         switch item.content {
         case .photo: return "Edit Photo"
         case .link: return "Edit Link"
-        case .map: return "Edit Location"
-        case .contact: return "Edit Contact"
-        case .musicEmbed: return "Edit Music"
-        case .file: return "Edit Document"
-        case .video: return "Edit Video"
-        case .text: return "Edit Note"
-        default: return "Edit Element"
+        case .map: return "Edit Location & Tag"
+        case .contact: return "Edit Contact & Tag"
+        case .musicEmbed: return "Edit Music & Tag"
+        case .file: return "Edit Document & Tag"
+        case .video: return "Edit Video & Tag"
+        case .text: return "Edit Note & Tag"
+        case .audioNote: return "Edit Voice Note & Tag"
+        case .emoji: return "Edit Sticker & Tag"
         }
     }
     
@@ -81,7 +89,24 @@ struct ElementContentEditorSheet: View {
         return URL(string: str)
     }
     
+    private func toggleAudioPreview(data: Data?) {
+        guard let data = data else { return }
+        if isPlayingPreview {
+            previewPlayer?.stop()
+            isPlayingPreview = false
+        } else {
+            do {
+                previewPlayer = try AVAudioPlayer(data: data)
+                previewPlayer?.play()
+                isPlayingPreview = true
+            } catch {
+                isPlayingPreview = false
+            }
+        }
+    }
+    
     private func saveChanges() {
+        previewPlayer?.stop()
         var updated = item
         updated.taggedFriendIDs = taggedFriendIDs
         
@@ -102,6 +127,8 @@ struct ElementContentEditorSheet: View {
         case .map(var payload):
             let trimmed = text1.trimmingCharacters(in: .whitespacesAndNewlines)
             payload.title = trimmed.isEmpty ? "Location" : trimmed
+            payload.latitude = mapLatitude
+            payload.longitude = mapLongitude
             updated.content = .map(payload)
         case .contact(var payload):
             let trimmedName = text1.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -128,7 +155,11 @@ struct ElementContentEditorSheet: View {
             let trimmed = text1.trimmingCharacters(in: .whitespacesAndNewlines)
             payload.text = trimmed.isEmpty ? "Note" : trimmed
             updated.content = .text(payload)
-        default:
+        case .audioNote:
+            // Audio payload remains intact, tags updated
+            break
+        case .emoji:
+            // Emoji remains intact, tags updated
             break
         }
         onSave(updated)
@@ -168,6 +199,21 @@ struct ElementContentEditorSheet: View {
             case .map:
                 Section("Location") {
                     TextField("Location Title", text: $text1)
+                    
+                    Button {
+                        showLocationPicker = true
+                    } label: {
+                        HStack {
+                            Label("Adjust Map Pin", systemImage: "mappin.and.ellipse")
+                            Spacer()
+                            Text(String(format: "%.3f, %.3f", mapLatitude, mapLongitude))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Image(systemName: "chevron.right")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
             case .contact:
                 Section("Contact Info") {
@@ -218,11 +264,38 @@ struct ElementContentEditorSheet: View {
                     TextField("Text", text: $text1, axis: .vertical)
                         .lineLimit(3...6)
                 }
-            default:
-                EmptyView()
+            case .audioNote(let payload):
+                Section("Voice Note") {
+                    HStack {
+                        Label(String(format: "%.1fs Voice Note", payload.durationSeconds), systemImage: "waveform")
+                            .font(.headline)
+                        Spacer()
+                        if let data = payload.audioData {
+                            Button {
+                                toggleAudioPreview(data: data)
+                            } label: {
+                                Image(systemName: isPlayingPreview ? "pause.circle.fill" : "play.circle.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(.purple)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            case .emoji(let payload):
+                Section("Sticker") {
+                    HStack {
+                        Text(payload.emoji)
+                            .font(.system(size: 40))
+                        Spacer()
+                        Text("Sticker Stamp")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
             
-            // Tagged Friends Section
+            // Tagged Friends Section (Available for EVERY element!)
             Section {
                 if store.friends.isEmpty {
                     Text("No friends added yet. Open Friends Cosmos from the top bar to add from your Contacts.")
@@ -258,18 +331,17 @@ struct ElementContentEditorSheet: View {
                                     .font(.title3)
                                     .foregroundStyle(isTagged ? Color.purple : Color.secondary.opacity(0.3))
                             }
-                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                     }
                 }
             } header: {
                 HStack {
-                    Text("Tag Friends")
+                    Text("Tag Friends With This Element")
                     Spacer()
                     if !taggedFriendIDs.isEmpty {
                         Text("\(taggedFriendIDs.count) tagged")
-                            .font(.caption)
+                            .font(.caption.bold())
                             .foregroundStyle(.purple)
                     }
                 }
@@ -281,6 +353,7 @@ struct ElementContentEditorSheet: View {
             
             Section {
                 Button(role: .destructive) {
+                    previewPlayer?.stop()
                     onDelete()
                     dismiss()
                 } label: {
@@ -298,6 +371,7 @@ struct ElementContentEditorSheet: View {
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") {
+                    previewPlayer?.stop()
                     onCancel()
                     dismiss()
                 }
@@ -308,6 +382,30 @@ struct ElementContentEditorSheet: View {
                 }
                 .fontWeight(.semibold)
             }
+        }
+        .sheet(isPresented: $showLocationPicker) {
+            LocationPickerSheet(
+                initialPayload: MapPayload(
+                    title: text1.isEmpty ? "Location" : text1,
+                    latitude: mapLatitude,
+                    longitude: mapLongitude
+                ),
+                card: store.selectedCard,
+                onSelect: { payload in
+                    mapLatitude = payload.latitude
+                    mapLongitude = payload.longitude
+                    if text1.isEmpty || text1 == "Location" {
+                        text1 = payload.title
+                    }
+                    showLocationPicker = false
+                },
+                onCancel: {
+                    showLocationPicker = false
+                }
+            )
+        }
+        .onDisappear {
+            previewPlayer?.stop()
         }
     }
 }
